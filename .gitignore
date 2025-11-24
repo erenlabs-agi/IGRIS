@@ -1,0 +1,20 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Editor Directories
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Language/Environment Specific
+__pycache__/
+*.py[cod]
+node_modules/
+.env
+venv/
+.venv/
+dist/
+build/

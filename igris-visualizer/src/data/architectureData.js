@@ -1,58 +1,68 @@
 // IGRIS Graph Data
 // A small-world network with Hubs and Cells
 
-const HUB_NODES = [
-    { id: 'MemoryHub', group: 'hub', label: 'Memory Hub', desc: 'Long-term storage (Vector DB)' },
-    { id: 'PlanningHub', group: 'hub', label: 'Planning Hub', desc: 'Hierarchical Task Network' },
-    { id: 'PredictHub', group: 'hub', label: 'Prediction Hub', desc: 'World Model Simulation' },
-    { id: 'LearningHub', group: 'hub', label: 'Learning Hub', desc: 'Global Gradient Updates' },
-];
+export const generateIGRISData = ({ rewiringProb = 0.1, hubConnectivity = 3 } = {}) => {
+    const HUB_NODES = [
+        { id: 'MemoryHub', group: 'hub', label: 'Memory Hub', desc: 'Long-term storage (Vector DB)' },
+        { id: 'PlanningHub', group: 'hub', label: 'Planning Hub', desc: 'Hierarchical Task Network' },
+        { id: 'PredictHub', group: 'hub', label: 'Prediction Hub', desc: 'World Model Simulation' },
+        { id: 'LearningHub', group: 'hub', label: 'Learning Hub', desc: 'Global Gradient Updates' },
+    ];
 
-const CELL_NODES = Array.from({ length: 20 }, (_, i) => ({
-    id: `cell_${i}`,
-    group: 'cell',
-    label: `Cell ${i}`,
-    desc: 'Local compute unit'
-}));
+    const CELL_NODES = Array.from({ length: 20 }, (_, i) => ({
+        id: `cell_${i}`,
+        group: 'cell',
+        label: `Cell ${i}`,
+        desc: 'Local compute unit'
+    }));
 
-const NODES = [...HUB_NODES, ...CELL_NODES];
+    const NODES = [...HUB_NODES, ...CELL_NODES];
+    const LINKS = [];
 
-// Generate links to create a small-world-like structure
-// 1. Local clusters (ring lattice)
-// 2. Hub connections
-// 3. Random shortcuts
+    // Watts-Strogatz like generation
+    // 1. Regular Ring Lattice
+    for (let i = 0; i < CELL_NODES.length; i++) {
+        // Connect to nearest neighbors (k=2)
+        const targetIndex1 = (i + 1) % CELL_NODES.length;
+        const targetIndex2 = (i + 2) % CELL_NODES.length;
 
-const LINKS = [];
+        // Rewire edge 1?
+        if (Math.random() < rewiringProb) {
+            const randomTarget = Math.floor(Math.random() * CELL_NODES.length);
+            if (randomTarget !== i) {
+                LINKS.push({ source: CELL_NODES[i].id, target: CELL_NODES[randomTarget].id, type: 'shortcut' });
+            }
+        } else {
+            LINKS.push({ source: CELL_NODES[i].id, target: CELL_NODES[targetIndex1].id, type: 'local' });
+        }
 
-// Connect cells in a ring (local clusters)
-for (let i = 0; i < CELL_NODES.length; i++) {
-    LINKS.push({ source: CELL_NODES[i].id, target: CELL_NODES[(i + 1) % CELL_NODES.length].id, type: 'local' });
-    LINKS.push({ source: CELL_NODES[i].id, target: CELL_NODES[(i + 2) % CELL_NODES.length].id, type: 'local' });
-}
-
-// Connect Hubs to random cells (Hub-and-Spoke)
-HUB_NODES.forEach(hub => {
-    // Connect to 3-5 random cells
-    const numConnections = 3 + Math.floor(Math.random() * 3);
-    for (let k = 0; k < numConnections; k++) {
-        const targetCell = CELL_NODES[Math.floor(Math.random() * CELL_NODES.length)];
-        LINKS.push({ source: hub.id, target: targetCell.id, type: 'hub-connection' });
+        // Rewire edge 2?
+        if (Math.random() < rewiringProb) {
+            const randomTarget = Math.floor(Math.random() * CELL_NODES.length);
+            if (randomTarget !== i) {
+                LINKS.push({ source: CELL_NODES[i].id, target: CELL_NODES[randomTarget].id, type: 'shortcut' });
+            }
+        } else {
+            LINKS.push({ source: CELL_NODES[i].id, target: CELL_NODES[targetIndex2].id, type: 'local' });
+        }
     }
-});
 
-// Add some random shortcuts between cells (Small World)
-for (let i = 0; i < 5; i++) {
-    const source = CELL_NODES[Math.floor(Math.random() * CELL_NODES.length)];
-    const target = CELL_NODES[Math.floor(Math.random() * CELL_NODES.length)];
-    if (source.id !== target.id) {
-        LINKS.push({ source: source.id, target: target.id, type: 'shortcut' });
-    }
-}
+    // 2. Hub Connections (Hub-and-Spoke overlay)
+    HUB_NODES.forEach(hub => {
+        // Connect to 'hubConnectivity' random cells
+        const targets = new Set();
+        while (targets.size < hubConnectivity) {
+            targets.add(Math.floor(Math.random() * CELL_NODES.length));
+        }
+        targets.forEach(targetIdx => {
+            LINKS.push({ source: hub.id, target: CELL_NODES[targetIdx].id, type: 'hub-connection' });
+        });
+    });
 
-export const IGRIS_DATA = {
-    nodes: NODES,
-    links: LINKS
+    return { nodes: NODES, links: LINKS };
 };
+
+export const IGRIS_DATA = generateIGRISData(); // Default static fallback
 
 // Transformer Data
 // Sequential layers

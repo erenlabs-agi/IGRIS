@@ -1,8 +1,8 @@
+
 import React, { useRef, useEffect, useState } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import { IGRIS_DATA } from '../data/architectureData';
 
-const IGRISGraph = () => {
+const IGRISGraph = ({ data }) => {
     const fgRef = useRef();
     const [highlightNodes, setHighlightNodes] = useState(new Set());
     const [highlightLinks, setHighlightLinks] = useState(new Set());
@@ -18,7 +18,7 @@ const IGRISGraph = () => {
 
             // Pick 5 random links
             for (let i = 0; i < 5; i++) {
-                const link = IGRIS_DATA.links[Math.floor(Math.random() * IGRIS_DATA.links.length)];
+                const link = data.links[Math.floor(Math.random() * data.links.length)];
                 activeLinks.add(link);
                 activeNodes.add(link.source.id);
                 activeNodes.add(link.target.id);
@@ -49,7 +49,7 @@ const IGRISGraph = () => {
             const neighbors = new Set();
             const links = new Set();
 
-            IGRIS_DATA.links.forEach(link => {
+            data.links.forEach(link => {
                 if (link.source.id === node.id || link.target.id === node.id) {
                     links.add(link);
                     neighbors.add(link.source.id);
@@ -99,7 +99,7 @@ const IGRISGraph = () => {
 
             <ForceGraph2D
                 ref={fgRef}
-                graphData={IGRIS_DATA}
+                graphData={data}
                 nodeLabel="label"
                 nodeColor={node => node.group === 'hub' ? '#3b82f6' : '#f97316'}
                 nodeVal={node => node.group === 'hub' ? 10 : 3}
